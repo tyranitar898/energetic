@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getSupabase } from "@/lib/supabase";
 
 export async function GET(request: Request) {
+  const supabase = getSupabase();
   if (!supabase) {
-    return NextResponse.json({
-      error: "Supabase not configured",
-      debug: {
-        urlSet: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-        keySet: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      }
-    }, { status: 503 });
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
   const { searchParams } = new URL(request.url);
@@ -30,14 +25,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const supabase = getSupabase();
   if (!supabase) {
-    return NextResponse.json({
-      error: "Supabase not configured",
-      debug: {
-        urlSet: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-        keySet: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      }
-    }, { status: 503 });
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
   }
 
   try {
