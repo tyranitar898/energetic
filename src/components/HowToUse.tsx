@@ -6,37 +6,58 @@ const steps = [
   {
     number: "01",
     title: "Log throughout the day",
-    description:
-      "Use voice or text to record what you eat, drink, and do. Just speak naturally — say things like \"had a PB&J for lunch\" or \"drank 500ml of water.\"",
+    description: (
+      <>
+        Use voice or text to record what you eat, drink, and do. Just speak naturally — say things like &quot;had a PB&amp;J for lunch&quot; or &quot;drank 500ml of water.&quot;
+      </>
+    ),
     icon: "🎙️",
     example: "\"I had two eggs and toast for breakfast\"",
-    link: { text: "Go to Today", href: "/?tab=today" },
   },
   {
     number: "02",
     title: "We structure it for you",
-    description:
-      "Your natural language gets parsed into structured data — category, quantity, calories, and more. No forms to fill out, no dropdowns to navigate.",
+    description: (
+      <>
+        Your natural language gets parsed into{" "}
+        <Link href="/?tab=all" className="font-medium text-zinc-900 underline underline-offset-2 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400">
+          structured data
+        </Link>
+        {" "}— category, quantity, calories, and more. No forms to fill out, no dropdowns to navigate.
+      </>
+    ),
     icon: "🧠",
     example: "food · 2 eggs + toast · ~350 cal",
   },
   {
     number: "03",
     title: "Rate your energy at end of day",
-    description:
-      "Before bed, give your day an energy score from 1 to 10. Optionally rate your sleep too. This is the signal that ties everything together.",
+    description: (
+      <>
+        Before bed, give your day an{" "}
+        <Link href="/?tab=today" className="font-medium text-zinc-900 underline underline-offset-2 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400">
+          energy score
+        </Link>
+        {" "}from 1 to 10. Optionally rate your sleep too. This is the signal that ties everything together.
+      </>
+    ),
     icon: "⚡",
     example: "Energy: 8/10 · Sleep: 7/10",
-    link: { text: "Rate today", href: "/?tab=today" },
   },
   {
     number: "04",
     title: "Discover what works for you",
-    description:
-      "Over time, patterns emerge. Head to the Analysis tab and choose a time window — 7 days, 14 days, a month, or 3 months — to get an AI-powered breakdown of which habits correlate with high-energy days and which ones drag you down.",
+    description: (
+      <>
+        Over time, patterns emerge. Head to the{" "}
+        <Link href="/?tab=analysis" className="font-medium text-zinc-900 underline underline-offset-2 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400">
+          Analysis
+        </Link>
+        {" "}tab and choose a time window — 7 days, 14 days, a month, or 3 months — to get an AI-powered breakdown of which habits correlate with high-energy days and which ones drag you down.
+      </>
+    ),
     icon: "📊",
     example: "High energy days → more water, morning exercise",
-    link: { text: "Go to Analysis", href: "/?tab=analysis" },
   },
 ];
 
@@ -97,16 +118,6 @@ export default function HowToUse() {
                 {step.example}
               </p>
             </div>
-            {"link" in step && step.link && (
-              <div className="pl-[44px] pt-1">
-                <Link
-                  href={step.link.href}
-                  className="text-xs font-medium text-zinc-900 underline underline-offset-2 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
-                >
-                  {step.link.text} →
-                </Link>
-              </div>
-            )}
           </div>
         ))}
       </section>
