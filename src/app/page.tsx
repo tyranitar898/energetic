@@ -1,64 +1,152 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import VoiceInput from "@/components/VoiceInput";
+import EntryList from "@/components/EntryList";
+import EnergyRating from "@/components/EnergyRating";
+import AllEntries from "@/components/AllEntries";
+import Analysis from "@/components/Analysis";
+import { Entry } from "@/types";
 
 export default function Home() {
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [currentRating, setCurrentRating] = useState<number | null>(null);
+  const [currentSleepRating, setCurrentSleepRating] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [tab, setTab] = useState<"today" | "all" | "analysis">("today");
+
+  const today = new Date().toISOString().split("T")[0];
+
+  const fetchEntries = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/entries?date=${today}`);
+      if (res.ok) {
+        const data = await res.json();
+        setEntries(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch entries:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [today]);
+
+  const fetchRating = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/ratings?date=${today}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentRating(data?.energy_rating || null);
+        setCurrentSleepRating(data?.sleep_rating || null);
+      }
+    } catch (error) {
+      console.error("Failed to fetch rating:", error);
+    }
+  }, [today]);
+
+  useEffect(() => {
+    fetchEntries();
+    fetchRating();
+  }, [fetchEntries, fetchRating]);
+
+  // Summary stats
+  const totalCalories = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
+  const waterEntries = entries.filter((e) => e.category === "hydration");
+  const exerciseEntries = entries.filter((e) => e.category === "exercise");
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mx-auto max-w-2xl px-4 py-4">
+          <h1 className="text-xl font-bold">Energetic</h1>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+            })}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      </header>
+
+      {/* Tabs */}
+      <div className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="mx-auto max-w-2xl px-4 flex gap-1">
+          <button
+            onClick={() => setTab("today")}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tab === "today"
+                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+            }`}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Today
+          </button>
+          <button
+            onClick={() => setTab("all")}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tab === "all"
+                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+            }`}
           >
-            Documentation
-          </a>
+            All Entries
+          </button>
+          <button
+            onClick={() => setTab("analysis")}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tab === "analysis"
+                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            Analysis
+          </button>
         </div>
+      </div>
+
+      <main className="mx-auto max-w-2xl px-4 py-6 space-y-6">
+        {tab === "today" ? (
+          <>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="rounded-xl border border-zinc-200 bg-white p-4 text-center dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="text-2xl font-bold">{entries.length}</p>
+                <p className="text-xs text-zinc-500">Entries</p>
+              </div>
+              <div className="rounded-xl border border-zinc-200 bg-white p-4 text-center dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="text-2xl font-bold">
+                  {totalCalories > 0 ? totalCalories : "-"}
+                </p>
+                <p className="text-xs text-zinc-500">Est. Calories</p>
+              </div>
+              <div className="rounded-xl border border-zinc-200 bg-white p-4 text-center dark:border-zinc-800 dark:bg-zinc-900">
+                <p className="text-2xl font-bold">
+                  {waterEntries.length > 0
+                    ? waterEntries.length
+                    : exerciseEntries.length > 0
+                    ? exerciseEntries.length
+                    : "-"}
+                </p>
+                <p className="text-xs text-zinc-500">
+                  {waterEntries.length > 0 ? "Water Logs" : "Exercise"}
+                </p>
+              </div>
+            </div>
+
+            <VoiceInput onEntryAdded={fetchEntries} />
+            <EntryList entries={entries} isLoading={isLoading} />
+            <EnergyRating
+              currentRating={currentRating}
+              currentSleepRating={currentSleepRating}
+              onRatingSaved={fetchRating}
+            />
+          </>
+        ) : tab === "all" ? (
+          <AllEntries />
+        ) : (
+          <Analysis />
+        )}
       </main>
     </div>
   );
