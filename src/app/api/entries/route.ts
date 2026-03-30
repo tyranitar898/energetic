@@ -24,6 +24,28 @@ export async function GET(request: Request) {
   return NextResponse.json(data);
 }
 
+export async function DELETE(request: Request) {
+  const supabase = getSupabase();
+  if (!supabase) {
+    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const id = searchParams.get("id");
+
+  if (!id) {
+    return NextResponse.json({ error: "Missing entry id" }, { status: 400 });
+  }
+
+  const { error } = await supabase.from("entries").delete().eq("id", id);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+
 export async function POST(request: Request) {
   const supabase = getSupabase();
   if (!supabase) {

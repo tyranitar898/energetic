@@ -135,7 +135,7 @@ export default function Home() {
             </div>
 
             <VoiceInput onEntryAdded={fetchEntries} />
-            <EntryList entries={entries} isLoading={isLoading} />
+            <EntryList entries={entries} isLoading={isLoading} onEntryDeleted={fetchEntries} />
             <EnergyRating
               currentRating={currentRating}
               currentSleepRating={currentSleepRating}

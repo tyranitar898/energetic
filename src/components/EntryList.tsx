@@ -1,10 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Entry } from "@/types";
 
 interface EntryListProps {
   entries: Entry[];
   isLoading: boolean;
+  onEntryDeleted?: () => void;
 }
 
 const categoryColors: Record<string, string> = {
@@ -25,7 +27,22 @@ const categoryIcons: Record<string, string> = {
   other: "📝",
 };
 
-export default function EntryList({ entries, isLoading }: EntryListProps) {
+export default function EntryList({ entries, isLoading, onEntryDeleted }: EntryListProps) {
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function handleDelete(id: string) {
+    if (!confirm("Delete this entry?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/entries?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (res.ok) onEntryDeleted?.();
+    } catch (error) {
+      console.error("Failed to delete entry:", error);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
@@ -68,6 +85,18 @@ export default function EntryList({ entries, isLoading }: EntryListProps) {
                   {entry.calories && <span>{entry.calories} cal</span>}
                 </div>
               </div>
+              <button
+                onClick={() => handleDelete(entry.id)}
+                disabled={deletingId === entry.id}
+                className="shrink-0 rounded-md p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                title="Delete entry"
+              >
+                {deletingId === entry.id ? (
+                  <span className="text-xs">...</span>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                )}
+              </button>
             </div>
           ))}
         </div>
