@@ -14,7 +14,7 @@ export default function Home() {
   const [currentRating, setCurrentRating] = useState<number | null>(null);
   const [currentSleepRating, setCurrentSleepRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [tab, setTab] = useState<"today" | "all" | "analysis" | "howto">("today");
+  const [tab, setTab] = useState<"today" | "all" | "analysis" | "howto">("howto");
 
   const today = new Date().toISOString().split("T")[0];
 
