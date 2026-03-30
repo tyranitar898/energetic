@@ -6,6 +6,7 @@ import EntryList from "@/components/EntryList";
 import EnergyRating from "@/components/EnergyRating";
 import AllEntries from "@/components/AllEntries";
 import Analysis from "@/components/Analysis";
+import HowToUse from "@/components/HowToUse";
 import { Entry } from "@/types";
 
 export default function Home() {
@@ -13,7 +14,7 @@ export default function Home() {
   const [currentRating, setCurrentRating] = useState<number | null>(null);
   const [currentSleepRating, setCurrentSleepRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [tab, setTab] = useState<"today" | "all" | "analysis">("today");
+  const [tab, setTab] = useState<"today" | "all" | "analysis" | "howto">("today");
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -102,6 +103,16 @@ export default function Home() {
           >
             Analysis
           </button>
+          <button
+            onClick={() => setTab("howto")}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tab === "howto"
+                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+            }`}
+          >
+            How to Use
+          </button>
         </div>
       </div>
 
@@ -144,8 +155,10 @@ export default function Home() {
           </>
         ) : tab === "all" ? (
           <AllEntries />
-        ) : (
+        ) : tab === "analysis" ? (
           <Analysis />
+        ) : (
+          <HowToUse />
         )}
       </main>
     </div>
