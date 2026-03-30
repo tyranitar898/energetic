@@ -29,7 +29,7 @@ const steps = [
     number: "04",
     title: "Discover what works for you",
     description:
-      "Over time, patterns emerge. See which habits correlate with high-energy days and which ones drag you down. Data-driven self-awareness.",
+      "Over time, patterns emerge. Head to the Analysis tab and choose a time window — 7 days, 14 days, a month, or 3 months — to get an AI-powered breakdown of which habits correlate with high-energy days and which ones drag you down.",
     icon: "📊",
     example: "High energy days → more water, morning exercise",
   },
