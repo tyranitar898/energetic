@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 const steps = [
   {
     number: "01",
@@ -8,6 +10,7 @@ const steps = [
       "Use voice or text to record what you eat, drink, and do. Just speak naturally — say things like \"had a PB&J for lunch\" or \"drank 500ml of water.\"",
     icon: "🎙️",
     example: "\"I had two eggs and toast for breakfast\"",
+    link: { text: "Go to Today", href: "/?tab=today" },
   },
   {
     number: "02",
@@ -24,6 +27,7 @@ const steps = [
       "Before bed, give your day an energy score from 1 to 10. Optionally rate your sleep too. This is the signal that ties everything together.",
     icon: "⚡",
     example: "Energy: 8/10 · Sleep: 7/10",
+    link: { text: "Rate today", href: "/?tab=today" },
   },
   {
     number: "04",
@@ -32,6 +36,7 @@ const steps = [
       "Over time, patterns emerge. Head to the Analysis tab and choose a time window — 7 days, 14 days, a month, or 3 months — to get an AI-powered breakdown of which habits correlate with high-energy days and which ones drag you down.",
     icon: "📊",
     example: "High energy days → more water, morning exercise",
+    link: { text: "Go to Analysis", href: "/?tab=analysis" },
   },
 ];
 
@@ -92,6 +97,16 @@ export default function HowToUse() {
                 {step.example}
               </p>
             </div>
+            {"link" in step && step.link && (
+              <div className="pl-[44px] pt-1">
+                <Link
+                  href={step.link.href}
+                  className="text-xs font-medium text-zinc-900 underline underline-offset-2 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400"
+                >
+                  {step.link.text} →
+                </Link>
+              </div>
+            )}
           </div>
         ))}
       </section>
@@ -167,7 +182,14 @@ export default function HowToUse() {
           Ready to start?
         </p>
         <p className="text-xs text-zinc-400 dark:text-zinc-600">
-          Switch to the <span className="font-medium text-zinc-600 dark:text-zinc-300">Today</span> tab and log your first entry.
+          Switch to the{" "}
+          <Link
+            href="/?tab=today"
+            className="font-medium text-zinc-600 underline underline-offset-2 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100"
+          >
+            Today
+          </Link>{" "}
+          tab and log your first entry.
         </p>
       </section>
     </div>

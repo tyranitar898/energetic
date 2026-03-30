@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import VoiceInput from "@/components/VoiceInput";
 import EntryList from "@/components/EntryList";
 import EnergyRating from "@/components/EnergyRating";
@@ -11,11 +13,24 @@ import { Entry } from "@/types";
 import { getUserId } from "@/lib/user-id";
 
 export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+const validTabs = ["today", "all", "analysis", "howto"] as const;
+type Tab = (typeof validTabs)[number];
+
+function HomeContent() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [currentRating, setCurrentRating] = useState<number | null>(null);
   const [currentSleepRating, setCurrentSleepRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [tab, setTab] = useState<"today" | "all" | "analysis" | "howto">("howto");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const tab: Tab = validTabs.includes(tabParam as Tab) ? (tabParam as Tab) : "howto";
   const [userId, setUserId] = useState<string | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
@@ -83,46 +98,25 @@ export default function Home() {
       {/* Tabs */}
       <div className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
         <div className="mx-auto max-w-2xl px-4 flex gap-1">
-          <button
-            onClick={() => setTab("today")}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === "today"
-                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            }`}
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setTab("all")}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === "all"
-                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            }`}
-          >
-            All Entries
-          </button>
-          <button
-            onClick={() => setTab("analysis")}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === "analysis"
-                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            }`}
-          >
-            Analysis
-          </button>
-          <button
-            onClick={() => setTab("howto")}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-              tab === "howto"
-                ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
-                : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-            }`}
-          >
-            How to Use
-          </button>
+          {([
+            { key: "today", label: "Today" },
+            { key: "all", label: "All Entries" },
+            { key: "analysis", label: "Analysis" },
+            { key: "howto", label: "How to Use" },
+          ] as const).map(({ key, label }) => (
+            <Link
+              key={key}
+              href={`/?tab=${key}`}
+              scroll={false}
+              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+                tab === key
+                  ? "border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100"
+                  : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
         </div>
       </div>
 
