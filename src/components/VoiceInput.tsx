@@ -4,9 +4,10 @@ import { useState, useRef, useCallback } from "react";
 
 interface VoiceInputProps {
   onEntryAdded: () => void;
+  userId: string | null;
 }
 
-export default function VoiceInput({ onEntryAdded }: VoiceInputProps) {
+export default function VoiceInput({ onEntryAdded, userId }: VoiceInputProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [status, setStatus] = useState<string>("");
@@ -74,7 +75,7 @@ export default function VoiceInput({ onEntryAdded }: VoiceInputProps) {
       const entryRes = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...parsed, raw_text: transcript }),
+        body: JSON.stringify({ ...parsed, raw_text: transcript, user_id: userId }),
       });
 
       if (!entryRes.ok) throw new Error("Failed to save");

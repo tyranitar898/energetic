@@ -10,12 +10,17 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const date =
     searchParams.get("date") || new Date().toISOString().split("T")[0];
+  const userId = searchParams.get("user_id");
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("entries")
     .select("*")
     .eq("date", date)
     .order("time", { ascending: true });
+
+  if (userId) query = query.eq("user_id", userId);
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -59,6 +64,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from("entries")
       .insert({
+        user_id: body.user_id || null,
         date: today,
         time: body.time,
         category: body.category,

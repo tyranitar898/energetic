@@ -16,7 +16,7 @@ interface Stats {
   avg_sleep: string | null;
 }
 
-export default function Analysis() {
+export default function Analysis({ userId }: { userId: string | null }) {
   const [selectedDays, setSelectedDays] = useState(7);
   const [analysis, setAnalysis] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -33,7 +33,7 @@ export default function Analysis() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ days: selectedDays }),
+        body: JSON.stringify({ days: selectedDays, user_id: userId }),
       });
 
       if (!res.ok) throw new Error("Failed to analyze");

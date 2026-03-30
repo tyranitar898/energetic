@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { days } = await request.json();
+    const { days, user_id } = await request.json();
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - (days || 7));
@@ -19,21 +19,27 @@ export async function POST(request: Request) {
     const startStr = startDate.toISOString().split("T")[0];
     const endStr = endDate.toISOString().split("T")[0];
 
-    const [entriesRes, ratingsRes] = await Promise.all([
-      supabase
-        .from("entries")
-        .select("*")
-        .gte("date", startStr)
-        .lte("date", endStr)
-        .order("date", { ascending: true })
-        .order("time", { ascending: true }),
-      supabase
-        .from("daily_ratings")
-        .select("*")
-        .gte("date", startStr)
-        .lte("date", endStr)
-        .order("date", { ascending: true }),
-    ]);
+    let entriesQuery = supabase
+      .from("entries")
+      .select("*")
+      .gte("date", startStr)
+      .lte("date", endStr)
+      .order("date", { ascending: true })
+      .order("time", { ascending: true });
+
+    let ratingsQuery = supabase
+      .from("daily_ratings")
+      .select("*")
+      .gte("date", startStr)
+      .lte("date", endStr)
+      .order("date", { ascending: true });
+
+    if (user_id) {
+      entriesQuery = entriesQuery.eq("user_id", user_id);
+      ratingsQuery = ratingsQuery.eq("user_id", user_id);
+    }
+
+    const [entriesRes, ratingsRes] = await Promise.all([entriesQuery, ratingsQuery]);
 
     if (entriesRes.error) {
       return NextResponse.json({ error: entriesRes.error.message }, { status: 500 });

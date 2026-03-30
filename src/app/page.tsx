@@ -8,6 +8,7 @@ import AllEntries from "@/components/AllEntries";
 import Analysis from "@/components/Analysis";
 import HowToUse from "@/components/HowToUse";
 import { Entry } from "@/types";
+import { getUserId } from "@/lib/user-id";
 
 export default function Home() {
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -15,12 +16,18 @@ export default function Home() {
   const [currentSleepRating, setCurrentSleepRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [tab, setTab] = useState<"today" | "all" | "analysis" | "howto">("howto");
+  const [userId, setUserId] = useState<string | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
 
+  useEffect(() => {
+    setUserId(getUserId());
+  }, []);
+
   const fetchEntries = useCallback(async () => {
+    if (!userId) return;
     try {
-      const res = await fetch(`/api/entries?date=${today}`);
+      const res = await fetch(`/api/entries?date=${today}&user_id=${userId}`);
       if (res.ok) {
         const data = await res.json();
         setEntries(data);
@@ -30,11 +37,12 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  }, [today]);
+  }, [today, userId]);
 
   const fetchRating = useCallback(async () => {
+    if (!userId) return;
     try {
-      const res = await fetch(`/api/ratings?date=${today}`);
+      const res = await fetch(`/api/ratings?date=${today}&user_id=${userId}`);
       if (res.ok) {
         const data = await res.json();
         setCurrentRating(data?.energy_rating || null);
@@ -43,12 +51,14 @@ export default function Home() {
     } catch (error) {
       console.error("Failed to fetch rating:", error);
     }
-  }, [today]);
+  }, [today, userId]);
 
   useEffect(() => {
-    fetchEntries();
-    fetchRating();
-  }, [fetchEntries, fetchRating]);
+    if (userId) {
+      fetchEntries();
+      fetchRating();
+    }
+  }, [fetchEntries, fetchRating, userId]);
 
   // Summary stats
   const totalCalories = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
@@ -145,18 +155,19 @@ export default function Home() {
               </div>
             </div>
 
-            <VoiceInput onEntryAdded={fetchEntries} />
+            <VoiceInput onEntryAdded={fetchEntries} userId={userId} />
             <EntryList entries={entries} isLoading={isLoading} onEntryDeleted={fetchEntries} />
             <EnergyRating
               currentRating={currentRating}
               currentSleepRating={currentSleepRating}
               onRatingSaved={fetchRating}
+              userId={userId}
             />
           </>
         ) : tab === "all" ? (
-          <AllEntries />
+          <AllEntries userId={userId} />
         ) : tab === "analysis" ? (
-          <Analysis />
+          <Analysis userId={userId} />
         ) : (
           <HowToUse />
         )}

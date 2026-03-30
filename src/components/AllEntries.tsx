@@ -21,14 +21,15 @@ const categoryColors: Record<string, string> = {
   other: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200",
 };
 
-export default function AllEntries() {
+export default function AllEntries({ userId }: { userId: string | null }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [ratings, setRatings] = useState<DailyRating[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/entries/all")
+    if (!userId) return;
+    fetch(`/api/entries/all?user_id=${userId}`)
       .then((res) => res.json())
       .then((data) => {
         setEntries(data.entries || []);
@@ -36,7 +37,7 @@ export default function AllEntries() {
       })
       .catch(console.error)
       .finally(() => setIsLoading(false));
-  }, []);
+  }, [userId]);
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this entry?")) return;

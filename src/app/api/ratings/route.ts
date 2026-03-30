@@ -10,12 +10,16 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const date =
     searchParams.get("date") || new Date().toISOString().split("T")[0];
+  const userId = searchParams.get("user_id");
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("daily_ratings")
     .select("*")
-    .eq("date", date)
-    .maybeSingle();
+    .eq("date", date);
+
+  if (userId) query = query.eq("user_id", userId);
+
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -38,12 +42,13 @@ export async function POST(request: Request) {
       .from("daily_ratings")
       .upsert(
         {
+          user_id: body.user_id || null,
           date: today,
           energy_rating: body.energy_rating,
           sleep_rating: body.sleep_rating || null,
           notes: body.notes || null,
         },
-        { onConflict: "date" }
+        { onConflict: "user_id,date" }
       )
       .select()
       .single();
