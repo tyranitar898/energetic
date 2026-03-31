@@ -29,10 +29,11 @@ function HomeContent() {
   const [currentSleepRating, setCurrentSleepRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const tabParam = searchParams.get("tab");
-  const tab: Tab = validTabs.includes(tabParam as Tab) ? (tabParam as Tab) : "howto";
+  const tab: Tab = validTabs.includes(tabParam as Tab) ? (tabParam as Tab) : "today";
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -40,6 +41,7 @@ function HomeContent() {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUserEmail(user?.email ?? null);
+      setAuthChecked(true);
     });
   }, []);
 
@@ -87,6 +89,45 @@ function HomeContent() {
   const waterEntries = entries.filter((e) => e.category === "hydration");
   const exerciseEntries = entries.filter((e) => e.category === "exercise");
 
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center">
+        <p className="text-sm text-zinc-400">Loading...</p>
+      </div>
+    );
+  }
+
+  // Unauthenticated: show landing page with HowToUse
+  if (!userEmail) {
+    return (
+      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+        <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mx-auto max-w-2xl px-4 py-4 flex items-center justify-between">
+            <h1 className="text-xl font-bold">Energetic</h1>
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/login?signup=true"
+                className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 transition-colors"
+              >
+                Sign Up
+              </Link>
+            </div>
+          </div>
+        </header>
+        <main className="mx-auto max-w-2xl px-4 py-6 space-y-6">
+          <HowToUse />
+        </main>
+      </div>
+    );
+  }
+
+  // Authenticated: show full app with tabs
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
@@ -102,11 +143,9 @@ function HomeContent() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            {userEmail && (
-              <span className="text-xs text-zinc-400 hidden sm:inline">
-                {userEmail}
-              </span>
-            )}
+            <span className="text-xs text-zinc-400 hidden sm:inline">
+              {userEmail}
+            </span>
             <button
               onClick={handleSignOut}
               className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors"

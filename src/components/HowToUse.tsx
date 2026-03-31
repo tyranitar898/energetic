@@ -5,6 +5,24 @@ import Link from "next/link";
 const steps = [
   {
     number: "01",
+    title: "Sign in to your account",
+    description: (
+      <>
+        <Link href="/login?signup=true" className="font-medium text-zinc-900 underline underline-offset-2 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400">
+          Create an account
+        </Link>
+        {" "}or{" "}
+        <Link href="/login" className="font-medium text-zinc-900 underline underline-offset-2 hover:text-zinc-600 dark:text-zinc-100 dark:hover:text-zinc-400">
+          sign in
+        </Link>
+        {" "}to start tracking. Your data is private and synced across devices.
+      </>
+    ),
+    icon: "🔐",
+    example: "email + password → you're in",
+  },
+  {
+    number: "02",
     title: "Log throughout the day",
     description: (
       <>
@@ -15,7 +33,7 @@ const steps = [
     example: "\"I had two eggs and toast for breakfast\"",
   },
   {
-    number: "02",
+    number: "03",
     title: "We structure it for you",
     description: (
       <>
@@ -30,7 +48,7 @@ const steps = [
     example: "food · 2 eggs + toast · ~350 cal",
   },
   {
-    number: "03",
+    number: "04",
     title: "Rate your energy at end of day",
     description: (
       <>
@@ -45,7 +63,7 @@ const steps = [
     example: "Energy: 8/10 · Sleep: 7/10",
   },
   {
-    number: "04",
+    number: "05",
     title: "Discover what works for you",
     description: (
       <>
