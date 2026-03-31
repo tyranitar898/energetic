@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 
 export async function POST() {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const today = new Date();
@@ -16,8 +18,8 @@ export async function POST() {
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split("T")[0];
 
-    // PBJ at 9am every day
     entries.push({
+      user_id: user.id,
       date: dateStr,
       time: "09:00 AM",
       category: "food",
@@ -28,8 +30,8 @@ export async function POST() {
       raw_text: "I had a PB&J sandwich at 9am",
     });
 
-    // 2L water at noon every day
     entries.push({
+      user_id: user.id,
       date: dateStr,
       time: "12:00 PM",
       category: "hydration",
@@ -40,11 +42,11 @@ export async function POST() {
       raw_text: "I had 2L of water at noon",
     });
 
-    // Vary energy and sleep ratings to make analysis interesting
     const energyRating = [6, 7, 5, 8, 4, 7, 6][i];
     const sleepRating = [7, 8, 5, 9, 4, 7, 6][i];
 
     ratings.push({
+      user_id: user.id,
       date: dateStr,
       energy_rating: energyRating,
       sleep_rating: sleepRating,

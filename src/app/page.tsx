@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import VoiceInput from "@/components/VoiceInput";
 import EntryList from "@/components/EntryList";
@@ -10,7 +10,7 @@ import AllEntries from "@/components/AllEntries";
 import Analysis from "@/components/Analysis";
 import HowToUse from "@/components/HowToUse";
 import { Entry } from "@/types";
-import { getUserId } from "@/lib/user-id";
+import { createClient } from "@/lib/supabase-browser";
 
 export default function Home() {
   return (
@@ -28,21 +28,24 @@ function HomeContent() {
   const [currentRating, setCurrentRating] = useState<number | null>(null);
   const [currentSleepRating, setCurrentSleepRating] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tabParam = searchParams.get("tab");
   const tab: Tab = validTabs.includes(tabParam as Tab) ? (tabParam as Tab) : "howto";
-  const [userId, setUserId] = useState<string | null>(null);
 
   const today = new Date().toISOString().split("T")[0];
 
   useEffect(() => {
-    setUserId(getUserId());
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email ?? null);
+    });
   }, []);
 
   const fetchEntries = useCallback(async () => {
-    if (!userId) return;
     try {
-      const res = await fetch(`/api/entries?date=${today}&user_id=${userId}`);
+      const res = await fetch(`/api/entries?date=${today}`);
       if (res.ok) {
         const data = await res.json();
         setEntries(data);
@@ -52,12 +55,11 @@ function HomeContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [today, userId]);
+  }, [today]);
 
   const fetchRating = useCallback(async () => {
-    if (!userId) return;
     try {
-      const res = await fetch(`/api/ratings?date=${today}&user_id=${userId}`);
+      const res = await fetch(`/api/ratings?date=${today}`);
       if (res.ok) {
         const data = await res.json();
         setCurrentRating(data?.energy_rating || null);
@@ -66,14 +68,19 @@ function HomeContent() {
     } catch (error) {
       console.error("Failed to fetch rating:", error);
     }
-  }, [today, userId]);
+  }, [today]);
 
   useEffect(() => {
-    if (userId) {
-      fetchEntries();
-      fetchRating();
-    }
-  }, [fetchEntries, fetchRating, userId]);
+    fetchEntries();
+    fetchRating();
+  }, [fetchEntries, fetchRating]);
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   // Summary stats
   const totalCalories = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
@@ -83,15 +90,30 @@ function HomeContent() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <header className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mx-auto max-w-2xl px-4 py-4">
-          <h1 className="text-xl font-bold">Energetic</h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            {new Date().toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "long",
-              day: "numeric",
-            })}
-          </p>
+        <div className="mx-auto max-w-2xl px-4 py-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold">Energetic</h1>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              {new Date().toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            {userEmail && (
+              <span className="text-xs text-zinc-400 hidden sm:inline">
+                {userEmail}
+              </span>
+            )}
+            <button
+              onClick={handleSignOut}
+              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800 transition-colors"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -149,19 +171,18 @@ function HomeContent() {
               </div>
             </div>
 
-            <VoiceInput onEntryAdded={fetchEntries} userId={userId} />
+            <VoiceInput onEntryAdded={fetchEntries} />
             <EntryList entries={entries} isLoading={isLoading} onEntryDeleted={fetchEntries} />
             <EnergyRating
               currentRating={currentRating}
               currentSleepRating={currentSleepRating}
               onRatingSaved={fetchRating}
-              userId={userId}
             />
           </>
         ) : tab === "all" ? (
-          <AllEntries userId={userId} />
+          <AllEntries />
         ) : tab === "analysis" ? (
-          <Analysis userId={userId} />
+          <Analysis />
         ) : (
           <HowToUse />
         )}

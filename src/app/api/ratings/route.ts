@@ -1,25 +1,24 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 
 export async function GET(request: Request) {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
   const date =
     searchParams.get("date") || new Date().toISOString().split("T")[0];
-  const userId = searchParams.get("user_id");
 
-  let query = supabase
+  const { data, error } = await supabase
     .from("daily_ratings")
     .select("*")
-    .eq("date", date);
-
-  if (userId) query = query.eq("user_id", userId);
-
-  const { data, error } = await query.maybeSingle();
+    .eq("user_id", user.id)
+    .eq("date", date)
+    .maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -29,9 +28,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
       .from("daily_ratings")
       .upsert(
         {
-          user_id: body.user_id || null,
+          user_id: user.id,
           date: today,
           energy_rating: body.energy_rating,
           sleep_rating: body.sleep_rating || null,

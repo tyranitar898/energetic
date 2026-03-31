@@ -1,26 +1,24 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 
 export async function GET(request: Request) {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
   const date =
     searchParams.get("date") || new Date().toISOString().split("T")[0];
-  const userId = searchParams.get("user_id");
 
-  let query = supabase
+  const { data, error } = await supabase
     .from("entries")
     .select("*")
+    .eq("user_id", user.id)
     .eq("date", date)
     .order("time", { ascending: true });
-
-  if (userId) query = query.eq("user_id", userId);
-
-  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -30,9 +28,11 @@ export async function GET(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
@@ -42,7 +42,11 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Missing entry id" }, { status: 400 });
   }
 
-  const { error } = await supabase.from("entries").delete().eq("id", id);
+  const { error } = await supabase
+    .from("entries")
+    .delete()
+    .eq("id", id)
+    .eq("user_id", user.id);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -52,9 +56,11 @@ export async function DELETE(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -64,7 +70,7 @@ export async function POST(request: Request) {
     const { data, error } = await supabase
       .from("entries")
       .insert({
-        user_id: body.user_id || null,
+        user_id: user.id,
         date,
         time: body.time,
         category: body.category,

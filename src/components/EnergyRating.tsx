@@ -6,14 +6,12 @@ interface EnergyRatingProps {
   currentRating: number | null;
   currentSleepRating: number | null;
   onRatingSaved: () => void;
-  userId: string | null;
 }
 
 export default function EnergyRating({
   currentRating,
   currentSleepRating,
   onRatingSaved,
-  userId,
 }: EnergyRatingProps) {
   const [energyRating, setEnergyRating] = useState<number>(currentRating || 5);
   const [sleepRating, setSleepRating] = useState<number>(currentSleepRating || 5);
@@ -31,7 +29,6 @@ export default function EnergyRating({
           energy_rating: energyRating,
           sleep_rating: sleepRating,
           notes,
-          user_id: userId,
         }),
       });
 

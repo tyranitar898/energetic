@@ -21,7 +21,7 @@ const categoryColors: Record<string, string> = {
   other: "bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200",
 };
 
-export default function AllEntries({ userId }: { userId: string | null }) {
+export default function AllEntries() {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [ratings, setRatings] = useState<DailyRating[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,8 +32,7 @@ export default function AllEntries({ userId }: { userId: string | null }) {
   const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
-    if (!userId) return;
-    fetch(`/api/entries/all?user_id=${userId}`)
+    fetch("/api/entries/all")
       .then((res) => res.json())
       .then((data) => {
         setEntries(data.entries || []);
@@ -41,7 +40,7 @@ export default function AllEntries({ userId }: { userId: string | null }) {
       })
       .catch(console.error)
       .finally(() => setIsLoading(false));
-  }, [userId]);
+  }, []);
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this entry?")) return;
@@ -59,8 +58,7 @@ export default function AllEntries({ userId }: { userId: string | null }) {
   }
 
   function refreshEntries() {
-    if (!userId) return;
-    fetch(`/api/entries/all?user_id=${userId}`)
+    fetch("/api/entries/all")
       .then((res) => res.json())
       .then((data) => {
         setEntries(data.entries || []);
@@ -71,7 +69,7 @@ export default function AllEntries({ userId }: { userId: string | null }) {
 
   async function handleAddEntry(e: React.FormEvent) {
     e.preventDefault();
-    if (!addText.trim() || !addDate || !userId) return;
+    if (!addText.trim() || !addDate) return;
 
     setIsAdding(true);
     setAddStatus("Parsing with AI...");
@@ -93,7 +91,6 @@ export default function AllEntries({ userId }: { userId: string | null }) {
         body: JSON.stringify({
           ...parsed,
           raw_text: addText,
-          user_id: userId,
           date: addDate,
         }),
       });

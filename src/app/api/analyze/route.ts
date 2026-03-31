@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
-import { getSupabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase-server";
 import Anthropic from "@anthropic-ai/sdk";
 
 const client = new Anthropic();
 
 export async function POST(request: Request) {
-  const supabase = getSupabase();
-  if (!supabase) {
-    return NextResponse.json({ error: "Supabase not configured" }, { status: 503 });
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const { days, user_id } = await request.json();
+    const { days } = await request.json();
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - (days || 7));
@@ -19,27 +21,23 @@ export async function POST(request: Request) {
     const startStr = startDate.toISOString().split("T")[0];
     const endStr = endDate.toISOString().split("T")[0];
 
-    let entriesQuery = supabase
-      .from("entries")
-      .select("*")
-      .gte("date", startStr)
-      .lte("date", endStr)
-      .order("date", { ascending: true })
-      .order("time", { ascending: true });
-
-    let ratingsQuery = supabase
-      .from("daily_ratings")
-      .select("*")
-      .gte("date", startStr)
-      .lte("date", endStr)
-      .order("date", { ascending: true });
-
-    if (user_id) {
-      entriesQuery = entriesQuery.eq("user_id", user_id);
-      ratingsQuery = ratingsQuery.eq("user_id", user_id);
-    }
-
-    const [entriesRes, ratingsRes] = await Promise.all([entriesQuery, ratingsQuery]);
+    const [entriesRes, ratingsRes] = await Promise.all([
+      supabase
+        .from("entries")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("date", startStr)
+        .lte("date", endStr)
+        .order("date", { ascending: true })
+        .order("time", { ascending: true }),
+      supabase
+        .from("daily_ratings")
+        .select("*")
+        .eq("user_id", user.id)
+        .gte("date", startStr)
+        .lte("date", endStr)
+        .order("date", { ascending: true }),
+    ]);
 
     if (entriesRes.error) {
       return NextResponse.json({ error: entriesRes.error.message }, { status: 500 });

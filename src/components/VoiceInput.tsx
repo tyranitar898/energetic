@@ -4,7 +4,6 @@ import { useState, useRef, useCallback } from "react";
 
 interface VoiceInputProps {
   onEntryAdded: () => void;
-  userId: string | null;
 }
 
 const TIME_PATTERN = /\d{1,2}[\s:]?\d{0,2}\s*(?:am|pm|a\.m\.|p\.m\.)/i;
@@ -14,7 +13,7 @@ function hasTimeReference(text: string): boolean {
   return TIME_PATTERN.test(text) || RELATIVE_TIME_PATTERN.test(text);
 }
 
-export default function VoiceInput({ onEntryAdded, userId }: VoiceInputProps) {
+export default function VoiceInput({ onEntryAdded }: VoiceInputProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [status, setStatus] = useState<string>("");
@@ -128,7 +127,7 @@ export default function VoiceInput({ onEntryAdded, userId }: VoiceInputProps) {
       const entryRes = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...parsed, raw_text: transcript, user_id: userId }),
+        body: JSON.stringify({ ...parsed, raw_text: transcript }),
       });
 
       if (!entryRes.ok) throw new Error("Failed to save");
