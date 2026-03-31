@@ -26,6 +26,10 @@ export default function AllEntries({ userId }: { userId: string | null }) {
   const [ratings, setRatings] = useState<DailyRating[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [addDate, setAddDate] = useState<string | null>(null);
+  const [addText, setAddText] = useState("");
+  const [addStatus, setAddStatus] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -51,6 +55,58 @@ export default function AllEntries({ userId }: { userId: string | null }) {
       console.error("Failed to delete entry:", error);
     } finally {
       setDeletingId(null);
+    }
+  }
+
+  function refreshEntries() {
+    if (!userId) return;
+    fetch(`/api/entries/all?user_id=${userId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setEntries(data.entries || []);
+        setRatings(data.ratings || []);
+      })
+      .catch(console.error);
+  }
+
+  async function handleAddEntry(e: React.FormEvent) {
+    e.preventDefault();
+    if (!addText.trim() || !addDate || !userId) return;
+
+    setIsAdding(true);
+    setAddStatus("Parsing with AI...");
+
+    try {
+      const parseRes = await fetch("/api/parse", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: addText }),
+      });
+      if (!parseRes.ok) throw new Error("Failed to parse");
+      const parsed = await parseRes.json();
+
+      setAddStatus("Saving...");
+
+      const entryRes = await fetch("/api/entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...parsed,
+          raw_text: addText,
+          user_id: userId,
+          date: addDate,
+        }),
+      });
+      if (!entryRes.ok) throw new Error("Failed to save");
+
+      setAddText("");
+      setAddDate(null);
+      setAddStatus("");
+      refreshEntries();
+    } catch {
+      setAddStatus("Error saving entry.");
+    } finally {
+      setIsAdding(false);
     }
   }
 
@@ -80,8 +136,60 @@ export default function AllEntries({ userId }: { userId: string | null }) {
     );
   }
 
+  const today = new Date().toISOString().split("T")[0];
+
   return (
     <div className="space-y-4">
+      {addDate === null ? (
+        <button
+          onClick={() => setAddDate(today)}
+          className="flex items-center gap-2 rounded-lg border border-dashed border-zinc-300 px-4 py-2.5 text-sm text-zinc-500 hover:border-zinc-400 hover:text-zinc-700 dark:border-zinc-700 dark:hover:border-zinc-500 dark:hover:text-zinc-300 transition-colors w-full justify-center"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          Add entry to a past date
+        </button>
+      ) : (
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-semibold text-sm">Add entry to past date</h3>
+            <button
+              onClick={() => { setAddDate(null); setAddText(""); setAddStatus(""); }}
+              className="rounded-md p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+          </div>
+          <form onSubmit={handleAddEntry} className="space-y-2">
+            <input
+              type="date"
+              value={addDate}
+              max={today}
+              onChange={(e) => setAddDate(e.target.value)}
+              className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={addText}
+                onChange={(e) => setAddText(e.target.value)}
+                placeholder="e.g. Had oatmeal at 8am"
+                className="flex-1 rounded-lg border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+              />
+              <button
+                type="submit"
+                disabled={!addText.trim() || isAdding}
+                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+              >
+                {isAdding ? "..." : "Add"}
+              </button>
+            </div>
+          </form>
+          {addStatus && (
+            <p className="mt-2 text-xs text-zinc-500">{addStatus}</p>
+          )}
+        </div>
+      )}
+
       {dates.map((date) => {
         const dayEntries = entriesByDate[date];
         const rating = ratingsByDate[date];
@@ -97,7 +205,16 @@ export default function AllEntries({ userId }: { userId: string | null }) {
             className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
           >
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">{dateLabel}</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold">{dateLabel}</h3>
+                <button
+                  onClick={() => { setAddDate(date); setAddText(""); setAddStatus(""); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  className="rounded-md p-0.5 text-zinc-300 hover:text-zinc-600 dark:text-zinc-600 dark:hover:text-zinc-300 transition-colors"
+                  title={`Add entry to ${dateLabel}`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                </button>
+              </div>
               <div className="flex gap-2">
                 {rating && (
                   <>

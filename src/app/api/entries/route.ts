@@ -59,13 +59,13 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const today = new Date().toISOString().split("T")[0];
+    const date = body.date || new Date().toISOString().split("T")[0];
 
     const { data, error } = await supabase
       .from("entries")
       .insert({
         user_id: body.user_id || null,
-        date: today,
+        date,
         time: body.time,
         category: body.category,
         item: body.item,
